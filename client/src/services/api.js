@@ -72,3 +72,95 @@ export async function fetchOrderByNumber(orderNumber) {
   if (!res.ok) throw new Error('Failed to fetch order details');
   return res.json();
 }
+
+// --- Admin Functions ---
+
+export async function verifyAdminKey(key) {
+  const res = await fetch(`${API_BASE}/admin/verify`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'x-admin-key': key
+    }
+  });
+  const data = await res.json();
+  if (!res.ok) throw new Error(data.message || 'Invalid admin key');
+  return data;
+}
+
+export async function createVehicle(formData, adminKey) {
+  const res = await fetch(`${API_BASE}/vehicles`, {
+    method: 'POST',
+    headers: {
+      'x-admin-key': adminKey
+    },
+    body: formData // FormData (multipart)
+  });
+  const data = await res.json();
+  if (!res.ok) throw new Error(data.message || 'Failed to create vehicle');
+  return data;
+}
+
+export async function updateVehicle(id, formData, adminKey) {
+  const res = await fetch(`${API_BASE}/vehicles/${id}`, {
+    method: 'PUT',
+    headers: {
+      'x-admin-key': adminKey
+    },
+    body: formData // FormData (multipart)
+  });
+  const data = await res.json();
+  if (!res.ok) throw new Error(data.message || 'Failed to update vehicle');
+  return data;
+}
+
+export async function deleteVehicle(id, adminKey) {
+  const res = await fetch(`${API_BASE}/vehicles/${id}`, {
+    method: 'DELETE',
+    headers: {
+      'x-admin-key': adminKey
+    }
+  });
+  const data = await res.json();
+  if (!res.ok) throw new Error(data.message || 'Failed to delete vehicle');
+  return data;
+}
+
+export async function createGarage(formData, adminKey) {
+  const res = await fetch(`${API_BASE}/garages`, {
+    method: 'POST',
+    headers: {
+      'x-admin-key': adminKey
+    },
+    body: formData // FormData (multipart)
+  });
+  const data = await res.json();
+  if (!res.ok) throw new Error(data.message || 'Failed to create garage');
+  return data;
+}
+
+export async function updateGarage(id, formData, adminKey) {
+  const res = await fetch(`${API_BASE}/garages/${id}`, {
+    method: 'PUT',
+    headers: {
+      'x-admin-key': adminKey
+    },
+    body: formData // FormData (multipart)
+  });
+  const data = await res.json();
+  if (!res.ok) throw new Error(data.message || 'Failed to update garage');
+  return data;
+}
+
+export async function deleteGarage(id, adminKey) {
+  const res = await fetch(`${API_BASE}/garages/${id}`, {
+    method: 'DELETE',
+    headers: {
+      'x-admin-key': adminKey
+    }
+  });
+  const data = await res.json();
+  if (!res.ok) throw new Error(data.message || 'Failed to delete garage');
+  return data;
+}
+

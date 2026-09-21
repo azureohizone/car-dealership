@@ -1,5 +1,5 @@
 import React from 'react';
-import { ShieldCheck, Mail, Volume2, VolumeX, Warehouse, Flame, Compass, Sparkles } from 'lucide-react';
+import { ShieldCheck, Mail, Volume2, VolumeX, Warehouse, Flame, Compass, Sparkles, Settings2 } from 'lucide-react';
 import { playClickSound, isSoundEnabled, toggleSound } from '../utils/audio';
 
 export default function Navbar({ activeTab, setActiveTab, emailCount, onOpenInbox, onOpenMyGarage }) {
@@ -14,7 +14,8 @@ export default function Navbar({ activeTab, setActiveTab, emailCount, onOpenInbo
     { id: 'marketplace', label: 'Showroom', icon: Flame },
     { id: 'garages', label: 'Cambodia Vaults', icon: Warehouse },
     { id: 'how-it-works', label: 'How It Works', icon: Compass },
-    { id: 'my-garage', label: 'My Garage', icon: ShieldCheck, highlight: true }
+    { id: 'my-garage', label: 'My Garage', icon: ShieldCheck, highlight: true },
+    { id: 'admin', label: 'Admin', icon: Settings2, admin: true }
   ];
 
   return (
@@ -80,10 +81,12 @@ export default function Navbar({ activeTab, setActiveTab, emailCount, onOpenInbo
                     ? 'bg-[#e50914] text-white shadow-red-glow'
                     : item.highlight
                     ? 'text-yellow-400 bg-yellow-500/10 hover:bg-yellow-500/20 border border-yellow-500/30'
+                    : item.admin
+                    ? 'text-neutral-400 bg-white/5 hover:bg-white/10 border border-white/10'
                     : 'text-neutral-300 hover:text-white hover:bg-[#1c1c24]'
                 }`}
               >
-                <Icon className={`w-4 h-4 ${isActive ? 'text-white' : item.highlight ? 'text-yellow-400' : 'text-red-500'}`} />
+                <Icon className={`w-4 h-4 ${isActive ? 'text-white' : item.highlight ? 'text-yellow-400' : item.admin ? 'text-neutral-400' : 'text-red-500'}`} />
                 {item.label}
               </button>
             );

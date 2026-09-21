@@ -6,15 +6,31 @@ const garageController = require('../controllers/garageController');
 const orderController = require('../controllers/orderController');
 const customerController = require('../controllers/customerController');
 const { getRecentEmails } = require('../services/emailService');
+const adminAuth = require('../middleware/adminAuth');
+const upload = require('../middleware/upload');
+const uploadGarage = require('../middleware/uploadGarage');
 
-// --- Vehicles ---
+// --- Vehicles (Public) ---
 router.get('/vehicles', vehicleController.getVehicles);
 router.get('/vehicles/categories', vehicleController.getCategories);
 router.get('/vehicles/:id', vehicleController.getVehicleById);
 
+// --- Vehicles (Admin Protected) ---
+router.post('/vehicles', adminAuth, upload.array('images', 6), vehicleController.createVehicle);
+router.put('/vehicles/:id', adminAuth, upload.array('images', 6), vehicleController.updateVehicle);
+router.delete('/vehicles/:id', adminAuth, vehicleController.deleteVehicle);
+
+// --- Admin Verify ---
+router.post('/admin/verify', adminAuth, (req, res) => {
+  res.json({ success: true, message: 'Admin key is valid' });
+});
+
 // --- Garages ---
 router.get('/garages', garageController.getGarages);
 router.get('/garages/:id', garageController.getGarageById);
+router.post('/garages', adminAuth, uploadGarage.array('image', 1), garageController.createGarage);
+router.put('/garages/:id', adminAuth, uploadGarage.array('image', 1), garageController.updateGarage);
+router.delete('/garages/:id', adminAuth, garageController.deleteGarage);
 
 // --- Orders ---
 router.post('/orders', orderController.createOrder);
@@ -37,3 +53,4 @@ router.get('/emails/recent', (req, res) => {
 });
 
 module.exports = router;
+

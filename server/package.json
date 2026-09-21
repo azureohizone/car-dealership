@@ -8,7 +8,12 @@
     "dev": "node --watch src/server.js",
     "seed": "node src/seed/seed.js"
   },
-  "keywords": ["car-dealership", "express", "mongodb", "luxury-cars"],
+  "keywords": [
+    "car-dealership",
+    "express",
+    "mongodb",
+    "luxury-cars"
+  ],
   "author": "Legendary Motors",
   "license": "MIT",
   "dependencies": {
@@ -17,6 +22,7 @@
     "express": "^4.21.2",
     "mongoose": "^8.9.5",
     "morgan": "^1.10.0",
+    "multer": "^2.4.0",
     "nodemailer": "^6.9.16"
   }
 }

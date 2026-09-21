@@ -9,6 +9,7 @@ import MyGarage from './components/MyGarage';
 import GarageShowcase from './components/GarageShowcase';
 import HowItWorks from './components/HowItWorks';
 import EmailInboxModal from './components/EmailInboxModal';
+import AdminPanel from './components/AdminPanel';
 import Footer from './components/Footer';
 
 import { fetchVehicles, fetchCategories, fetchGarages, fetchRecentEmails } from './services/api';
@@ -142,6 +143,10 @@ export default function App() {
             onBrowseShowroom={() => setActiveTab('marketplace')}
             onInspectVehicle={(veh) => setSelectedVehicleForDetails(veh)}
           />
+        )}
+
+        {activeTab === 'admin' && (
+          <AdminPanel onRefreshData={loadInitialData} />
         )}
       </main>
 
