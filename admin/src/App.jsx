@@ -8,7 +8,7 @@ import {
   fetchVehicles, fetchCategories, fetchGarages, verifyAdminKey,
   createVehicle, updateVehicle, deleteVehicle,
   createGarage, updateGarage, deleteGarage
-} from '../services/api';
+} from './services/api';
 
 const CATEGORIES = ['Supercars', '2 Door', '4 Door', 'SUV', 'Motorcycles', 'Special'];
 const AVAILABILITY_OPTIONS = ['in_stock', 'low_stock', 'reserved', 'sold'];
@@ -994,8 +994,9 @@ export default function AdminPanel({ onRefreshData }) {
   }
 
   return (
-    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-      {/* Toast */}
+    <div className="min-h-screen bg-[#0a0a0d] text-[#e5e7eb] font-sans selection:bg-[#e50914] selection:text-white">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        {/* Toast */}
       {toast && (
         <div className={`fixed top-24 right-6 z-50 flex items-center gap-2 px-4 py-3 rounded-xl shadow-lg border text-sm font-semibold animate-[slideIn_0.3s_ease-out] ${
           toast.type === 'error'
@@ -1247,6 +1248,7 @@ export default function AdminPanel({ onRefreshData }) {
           loading={deleting}
         />
       )}
+      </div>
     </div>
   );
 }
