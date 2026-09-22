@@ -1,11 +1,13 @@
 import React, { useState } from 'react';
-import { X, ShoppingCart, Check, Shield, Flame, Gauge, Zap, Fuel, Sparkles, ChevronRight } from 'lucide-react';
+import { X, ShoppingCart, Check, Shield, Flame, Gauge, Zap, Fuel, Sparkles, ChevronRight, Box } from 'lucide-react';
 import { playClickSound } from '../utils/audio';
+import CarViewer3D from './CarViewer3D';
 
 export default function VehicleDetailsModal({ vehicle, onClose, onPurchase }) {
   if (!vehicle) return null;
 
   const [activeImageIndex, setActiveImageIndex] = useState(0);
+  const [is3DMode, setIs3DMode] = useState(false);
 
   const formattedPrice = new Intl.NumberFormat('en-US', {
     style: 'currency',
@@ -48,13 +50,34 @@ export default function VehicleDetailsModal({ vehicle, onClose, onPurchase }) {
         <div className="overflow-y-auto p-6 space-y-8">
           {/* Main Gallery Showcase */}
           <div className="space-y-3">
-            <div className="relative h-72 sm:h-96 w-full rounded-xl overflow-hidden bg-[#08080b] border border-[#232332]">
-              <img
-                src={images[activeImageIndex]}
-                alt={vehicle.model}
-                className="w-full h-full object-cover object-center transition-all duration-500"
-              />
-              <div className="absolute inset-0 bg-gradient-to-t from-[#0f0f15]/80 via-transparent to-black/20" />
+            {is3DMode ? (
+              <div className="h-72 sm:h-96 w-full rounded-xl overflow-hidden relative">
+                <CarViewer3D 
+                  carColor={vehicle.color || '#e50914'} 
+                  onExit={() => setIs3DMode(false)} 
+                />
+              </div>
+            ) : (
+              <>
+                <div className="relative h-72 sm:h-96 w-full rounded-xl overflow-hidden bg-[#08080b] border border-[#232332]">
+                  <img
+                    src={images[activeImageIndex]}
+                    alt={vehicle.model}
+                    className="w-full h-full object-cover object-center transition-all duration-500"
+                  />
+                  <div className="absolute inset-0 bg-gradient-to-t from-[#0f0f15]/80 via-transparent to-black/20" />
+
+                  {/* 3D View Toggle */}
+                  <button 
+                    onClick={() => {
+                      playClickSound();
+                      setIs3DMode(true);
+                    }}
+                    className="absolute top-4 left-4 bg-black/80 backdrop-blur-md border border-[#2d2d3f] hover:border-white/30 text-white px-3 py-1.5 rounded-lg shadow-xl text-xs uppercase font-bold tracking-wider transition-all flex items-center gap-2 cursor-pointer"
+                  >
+                    <Box className="w-4 h-4 text-[#e50914]" />
+                    View in 3D (Demo)
+                  </button>
 
               {/* Price Tag Overlay */}
               <div className="absolute bottom-4 left-4 bg-black/80 backdrop-blur-md border border-[#2d2d3f] p-3 rounded-lg shadow-xl">
@@ -95,6 +118,8 @@ export default function VehicleDetailsModal({ vehicle, onClose, onPurchase }) {
                 ))}
               </div>
             )}
+            </>
+          )}
           </div>
 
           {/* Title & Lore Section */}
