@@ -143,6 +143,8 @@ exports.createOrder = async (req, res) => {
       data: {
         order,
         emailSent: emailResult.success,
+        emailProvider: emailResult.provider || 'unknown',
+        emailMessageId: emailResult.messageId || null,
         emailPreviewUrl: emailResult.previewUrl || null,
         htmlPreview: emailResult.htmlContent || null
       }

@@ -6,7 +6,8 @@
   "scripts": {
     "start": "node src/server.js",
     "dev": "node --watch src/server.js",
-    "seed": "node src/seed/seed.js"
+    "seed": "node src/seed/seed.js",
+    "test:email": "node test-resend.js"
   },
   "keywords": [
     "car-dealership",
@@ -23,6 +24,7 @@
     "mongoose": "^8.9.5",
     "morgan": "^1.10.0",
     "multer": "^2.4.0",
-    "nodemailer": "^6.9.16"
+    "nodemailer": "^6.9.16",
+    "resend": "^6.28.1"
   }
 }

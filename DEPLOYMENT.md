@@ -60,9 +60,11 @@ This guide provides step-by-step instructions to deploy the entire Legendary Mot
 | `PORT` | `10000` | Render assigns ports automatically, 10000 or 5001 is fine |
 | `MONGODB_URI` | `mongodb+srv://...` | Your MongoDB Atlas connection URI from Step 1 |
 | `ADMIN_KEY` | `legendary-admin-2026` | Master admin key for managing inventory |
-| `SMTP_SERVICE` | `gmail` | (Optional) Email service |
-| `SMTP_USER` | `your_email@gmail.com` | (Optional) Email for order notifications |
-| `SMTP_PASS` | `your_app_password` | (Optional) Gmail App Password |
+| `RESEND_API_KEY` | `re_...` | (Recommended) Resend API key for cloud transactional emails |
+| `RESEND_FROM` | `Legendary Motors <onboarding@resend.dev>` | Resend verified sender or test domain |
+| `SMTP_SERVICE` | `gmail` | (Fallback) Email service |
+| `SMTP_USER` | `your_email@gmail.com` | (Fallback) Email for order notifications |
+| `SMTP_PASS` | `your_app_password` | (Fallback) Gmail App Password |
 | `ALLOWED_ORIGINS` | `*` | Or comma-separated frontend URLs after deploying Vercel |
 
 6. Click **Deploy Web Service**.

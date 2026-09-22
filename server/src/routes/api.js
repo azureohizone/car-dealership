@@ -5,7 +5,7 @@ const vehicleController = require('../controllers/vehicleController');
 const garageController = require('../controllers/garageController');
 const orderController = require('../controllers/orderController');
 const customerController = require('../controllers/customerController');
-const { getRecentEmails } = require('../services/emailService');
+const { getRecentEmails, sendTestConfirmationEmail } = require('../services/emailService');
 const adminAuth = require('../middleware/adminAuth');
 const upload = require('../middleware/upload');
 const uploadGarage = require('../middleware/uploadGarage');
@@ -42,7 +42,7 @@ router.get('/orders/email/:email', orderController.getOrdersByEmail);
 // --- Customer Garage Fleet ---
 router.get('/customers/:email/garage', customerController.getCustomerGarage);
 
-// --- Email Preview (Portfolio Inspector) ---
+// --- Email Preview (Portfolio Inspector) & Resend Testing ---
 router.get('/emails/recent', (req, res) => {
   const emails = getRecentEmails();
   res.json({
@@ -50,6 +50,19 @@ router.get('/emails/recent', (req, res) => {
     count: emails.length,
     data: emails
   });
+});
+
+router.post('/emails/test', async (req, res) => {
+  try {
+    const { to } = req.body;
+    if (!to || !to.includes('@')) {
+      return res.status(400).json({ success: false, message: 'A valid recipient email address is required in { "to": "..." }' });
+    }
+    const result = await sendTestConfirmationEmail(to.trim().toLowerCase());
+    res.json(result);
+  } catch (err) {
+    res.status(500).json({ success: false, error: err.message });
+  }
 });
 
 module.exports = router;

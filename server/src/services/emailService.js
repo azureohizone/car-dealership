@@ -1,9 +1,16 @@
 const nodemailer = require('nodemailer');
+const { Resend } = require('resend');
 
 // In-memory store for recent dispatched emails for instant in-app portfolio preview
 const recentDispatchedEmails = [];
 
 let transporter = null;
+
+function getResendClient() {
+  const apiKey = process.env.RESEND_API_KEY;
+  if (!apiKey) return null;
+  return new Resend(apiKey);
+}
 
 async function getTransporter() {
   if (transporter) return transporter;
@@ -360,25 +367,85 @@ function generateLuxuryEmailHtml({ order, customer, vehicle, garage }) {
 }
 
 async function sendOrderConfirmationEmail({ order, customer, vehicle, garage }) {
+  const htmlContent = generateLuxuryEmailHtml({ order, customer, vehicle, garage });
+  const subject = `Legendary Motors — Purchase Confirmation #${order.orderNumber}`;
+  const textContent = `Thank you for purchasing from Legendary Motors.\n\n` +
+    `PURCHASE DETAILS\n` +
+    `Vehicle: ${vehicle.brand} ${vehicle.model}\n` +
+    `Price: $${Number(order.price).toLocaleString()}\n` +
+    `Order ID: ${order.orderNumber}\n\n` +
+    `CAMBODIA VAULT & GARAGE ASSIGNMENT\n` +
+    `Location: ${garage.name}\n` +
+    `Coordinates/City: ${garage.locationDescription || garage.city + ', Cambodia'}\n\n` +
+    `Your vehicle is securely parked and registered in the collector registry.\n` +
+    `Thank you for choosing Legendary Motors.`;
+
+  const resend = getResendClient();
+
+  // 1. Try Resend if RESEND_API_KEY is configured
+  if (resend) {
+    try {
+      const fromAddress = process.env.RESEND_FROM || 'Legendary Motors <onboarding@resend.dev>';
+      console.log(`[EmailService/Resend] Attempting to dispatch confirmation email to ${customer.email} via Resend...`);
+
+      const { data, error } = await resend.emails.send({
+        from: fromAddress,
+        to: [customer.email],
+        subject,
+        text: textContent,
+        html: htmlContent
+      });
+
+      if (error) {
+        console.error('[EmailService/Resend] Resend API error response:', error);
+        if (error.message && error.message.includes('testing emails')) {
+          console.warn('[EmailService/Resend] ⚠️ Resend sandbox warning: With onboarding@resend.dev, you can only send emails to the address associated with your Resend account. To send to any recipient, add & verify a custom domain in your Resend dashboard.');
+        }
+        throw new Error(error.message || 'Resend delivery failed');
+      }
+
+      const emailRecord = {
+        id: order.orderNumber,
+        orderNumber: order.orderNumber,
+        provider: 'resend',
+        to: customer.email,
+        recipientName: customer.name || 'Valued Collector',
+        subject,
+        vehicleName: `${vehicle.brand} ${vehicle.model}`,
+        garageName: garage.name,
+        price: order.price,
+        sentAt: new Date(),
+        etherealUrl: null,
+        messageId: data?.id,
+        htmlContent
+      };
+
+      recentDispatchedEmails.unshift(emailRecord);
+      if (recentDispatchedEmails.length > 50) recentDispatchedEmails.pop();
+
+      console.log(`[EmailService/Resend] Email successfully dispatched via Resend to ${customer.email}! (Message ID: ${data?.id})`);
+
+      return {
+        success: true,
+        provider: 'resend',
+        messageId: data?.id,
+        htmlContent
+      };
+    } catch (resendError) {
+      console.warn(`[EmailService/Resend] Resend dispatch failed (${resendError.message}). Attempting fallback transporter...`);
+    }
+  }
+
+  // 2. Fallback to Nodemailer / SMTP / Ethereal
   try {
     const mailTransporter = await getTransporter();
-    const htmlContent = generateLuxuryEmailHtml({ order, customer, vehicle, garage });
     const fromAddress = process.env.SMTP_FROM || (process.env.SMTP_USER ? `"Legendary Motors" <${process.env.SMTP_USER}>` : '"Legendary Motors" <concierge@legendarymotors.vip>');
 
     const mailOptions = {
       from: fromAddress,
       to: customer.email,
-      subject: `Legendary Motors — Purchase Confirmation #${order.orderNumber}`,
-      text: `Thank you for purchasing from Legendary Motors.\n\n` +
-        `PURCHASE DETAILS\n` +
-        `Vehicle: ${vehicle.brand} ${vehicle.model}\n` +
-        `Price: $${order.price.toLocaleString()}\n` +
-        `Order ID: ${order.orderNumber}\n\n` +
-        `GARAGE ASSIGNMENT\n` +
-        `${garage.name}\n` +
-        `${garage.locationDescription || garage.city + ', Cambodia'}\n\n` +
-        `Your vehicle has been assigned to your selected garage.\n` +
-        `Thank you for choosing Legendary Motors.`,
+      subject,
+      text: textContent,
       html: htmlContent
     };
 
@@ -388,9 +455,10 @@ async function sendOrderConfirmationEmail({ order, customer, vehicle, garage }) 
     const emailRecord = {
       id: order.orderNumber,
       orderNumber: order.orderNumber,
+      provider: etherealUrl ? 'ethereal' : 'smtp',
       to: customer.email,
       recipientName: customer.name || 'Valued Collector',
-      subject: mailOptions.subject,
+      subject,
       vehicleName: `${vehicle.brand} ${vehicle.model}`,
       garageName: garage.name,
       price: order.price,
@@ -401,45 +469,85 @@ async function sendOrderConfirmationEmail({ order, customer, vehicle, garage }) 
     };
 
     recentDispatchedEmails.unshift(emailRecord);
-    if (recentDispatchedEmails.length > 50) {
-      recentDispatchedEmails.pop();
-    }
+    if (recentDispatchedEmails.length > 50) recentDispatchedEmails.pop();
 
-    console.log(`[EmailService] Confirmation email successfully sent to ${customer.email} for order ${order.orderNumber}`);
+    console.log(`[EmailService/Nodemailer] Confirmation email sent to ${customer.email} for order ${order.orderNumber}`);
     if (etherealUrl) {
-      console.log(`[EmailService] Ethereal Preview URL: ${etherealUrl}`);
+      console.log(`[EmailService/Nodemailer] Ethereal Preview URL: ${etherealUrl}`);
     }
 
     return {
       success: true,
+      provider: etherealUrl ? 'ethereal' : 'smtp',
       previewUrl: etherealUrl,
       messageId: info.messageId,
       htmlContent
     };
   } catch (error) {
     console.error('[EmailService] Error sending purchase confirmation email:', error);
-    // Still record to in-memory store so user can inspect it in UI
-    const fallbackHtml = generateLuxuryEmailHtml({ order, customer, vehicle, garage });
-    recentDispatchedEmails.unshift({
+
+    // Record in memory so the user can inspect in the UI
+    const emailRecord = {
       id: order.orderNumber,
       orderNumber: order.orderNumber,
+      provider: 'failed',
       to: customer.email,
       recipientName: customer.name || 'Valued Collector',
-      subject: `Legendary Motors — Purchase Confirmation #${order.orderNumber}`,
+      subject,
       vehicleName: `${vehicle.brand} ${vehicle.model}`,
       garageName: garage.name,
       price: order.price,
       sentAt: new Date(),
       etherealUrl: null,
-      htmlContent: fallbackHtml
-    });
+      error: error.message,
+      htmlContent
+    };
+
+    recentDispatchedEmails.unshift(emailRecord);
+    if (recentDispatchedEmails.length > 50) recentDispatchedEmails.pop();
 
     return {
       success: false,
       error: error.message,
-      htmlContent: fallbackHtml
+      htmlContent
     };
   }
+}
+
+async function sendTestConfirmationEmail(toEmail) {
+  const sampleOrder = {
+    orderNumber: `LM-TEST-${Math.floor(1000 + Math.random() * 9000)}`,
+    price: 3250000,
+    purchaseDate: new Date()
+  };
+  const sampleCustomer = {
+    name: 'VIP Test Collector',
+    email: toEmail
+  };
+  const sampleVehicle = {
+    brand: 'Bugatti',
+    model: 'Chiron Super Sport',
+    price: 3825000,
+    image: 'https://images.unsplash.com/photo-1544829099-b9a0c07fad1a?auto=format&fit=crop&w=800&q=80',
+    specifications: {
+      engine: '8.0L Quad-Turbo W16',
+      horsepower: 1600,
+      topSpeed: '440 km/h'
+    }
+  };
+  const sampleGarage = {
+    name: 'Phnom Penh Diamond Vault',
+    city: 'Phnom Penh',
+    locationDescription: 'Koh Pich Elite Vault, Phnom Penh, Cambodia',
+    securityInformation: '24/7 Armed Garrison & Biometric Access'
+  };
+
+  return sendOrderConfirmationEmail({
+    order: sampleOrder,
+    customer: sampleCustomer,
+    vehicle: sampleVehicle,
+    garage: sampleGarage
+  });
 }
 
 function getRecentEmails() {
@@ -448,6 +556,7 @@ function getRecentEmails() {
 
 module.exports = {
   sendOrderConfirmationEmail,
+  sendTestConfirmationEmail,
   generateLuxuryEmailHtml,
   getRecentEmails
 };
