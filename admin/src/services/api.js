@@ -1,4 +1,17 @@
-const API_BASE = '/api';
+const BASE_URL = import.meta.env.VITE_API_BASE_URL || '';
+const API_BASE = BASE_URL ? (BASE_URL.endsWith('/api') ? BASE_URL : `${BASE_URL.replace(/\/+$/, '')}/api`) : '/api';
+const ROOT_ORIGIN = BASE_URL ? BASE_URL.replace(/\/api\/?$/, '') : '';
+
+export function getImageUrl(imagePath) {
+  if (!imagePath) return '';
+  if (imagePath.startsWith('http://') || imagePath.startsWith('https://') || imagePath.startsWith('data:')) {
+    return imagePath;
+  }
+  if (imagePath.startsWith('/')) {
+    return `${ROOT_ORIGIN}${imagePath}`;
+  }
+  return `${ROOT_ORIGIN}/${imagePath}`;
+}
 
 export async function fetchVehicles(params = {}) {
   const query = new URLSearchParams();
